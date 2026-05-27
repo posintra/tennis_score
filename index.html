@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tennis Score</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f3f7f0;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      padding: 24px;
+    }
+
+    h1 {
+      margin-bottom: 24px;
+      color: #1f3b2d;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    button {
+      padding: 14px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #2f7d4a;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #25663c;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Tennis Score</h1>
+    <section class="button-group">
+      <button type="button" onclick="location.href='score_list.html'">Score 조회</button>
+      <button type="button" onclick="location.href='Score_input.html'">Score 등록</button>
+      <button type="button">순위 확인</button>
+    </section>
+  </main>
+</body>
+</html>

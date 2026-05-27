@@ -1,0 +1,238 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Score 등록</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background: #f3f7f0;
+      font-family: "Segoe UI", sans-serif;
+      color: #1f3b2d;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 560px;
+      padding: 28px 20px 40px;
+    }
+
+    h1 {
+      margin: 0 0 24px;
+      text-align: center;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    label {
+      min-width: 110px;
+      font-weight: 600;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      height: 36px;
+      padding: 6px 10px;
+      border: 1px solid #b9c8bd;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    input[type="text"] {
+      width: 140px;
+    }
+
+    input[type="number"] {
+      width: 70px;
+    }
+
+    .pick-btn {
+      height: 36px;
+      padding: 0 12px;
+      border: none;
+      border-radius: 8px;
+      background: #2f7d4a;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .pick-btn:hover {
+      background: #25663c;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .submit-row {
+      margin-top: 24px;
+      justify-content: center;
+    }
+
+    .submit-btn {
+      height: 40px;
+      min-width: 130px;
+      border: none;
+      border-radius: 10px;
+      background: #1f3b2d;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .submit-btn:hover {
+      background: #162a20;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Score 등록</h1>
+
+    <div class="row">
+      <label for="gameDate">게임 일자 :</label>
+      <input
+        id="gameDate"
+        type="text"
+        placeholder="yymmdd"
+        maxlength="6"
+        pattern="\d{6}"
+        inputmode="numeric"
+        title="yymmdd 형식(숫자 6자리)으로 입력하세요"
+        required
+      />
+    </div>
+
+    <div class="row">
+      <label>Pair 1 :</label>
+      <button id="pair1Player1Btn" type="button" class="pick-btn" onclick="openPlayerSelect('pair1Player1Select')">선수 선택</button>
+      <select id="pair1Player1Select" class="hidden" onchange="selectPlayer(this, 'pair1Player1Btn')">
+        <option value="">선수 선택</option>
+      </select>
+
+      <button id="pair1Player2Btn" type="button" class="pick-btn" onclick="openPlayerSelect('pair1Player2Select')">선수 선택</button>
+      <select id="pair1Player2Select" class="hidden" onchange="selectPlayer(this, 'pair1Player2Btn')">
+        <option value="">선수 선택</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>Pair 2 :</label>
+      <button id="pair2Player1Btn" type="button" class="pick-btn" onclick="openPlayerSelect('pair2Player1Select')">선수 선택</button>
+      <select id="pair2Player1Select" class="hidden" onchange="selectPlayer(this, 'pair2Player1Btn')">
+        <option value="">선수 선택</option>
+      </select>
+
+      <button id="pair2Player2Btn" type="button" class="pick-btn" onclick="openPlayerSelect('pair2Player2Select')">선수 선택</button>
+      <select id="pair2Player2Select" class="hidden" onchange="selectPlayer(this, 'pair2Player2Btn')">
+        <option value="">선수 선택</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label for="score1">점수 입력 :</label>
+      <input id="score1" type="number" min="0" placeholder="입력박스1" />
+      <span>:</span>
+      <input id="score2" type="number" min="0" placeholder="입력박스2" />
+    </div>
+
+    <div class="row submit-row">
+      <button type="button" class="submit-btn">등 록</button>
+    </div>
+  </main>
+
+  <script>
+    let playerNames = [];
+
+    async function loadPlayerNames() {
+      if (playerNames.length > 0) {
+        return playerNames;
+      }
+
+      const response = await fetch("member.csv", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("member.csv 파일을 읽을 수 없습니다.");
+      }
+
+      const raw = await response.text();
+      const text = raw.replace(/^\uFEFF/, "");
+      const lines = text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+
+      if (lines.length < 2 || lines[0] !== "선수 명단") {
+        throw new Error("member.csv의 '선수 명단' 열을 확인해 주세요.");
+      }
+
+      playerNames = lines.slice(1);
+      return playerNames;
+    }
+
+    function fillPlayerSelect(selectEl, names) {
+      const currentValue = selectEl.value;
+      selectEl.innerHTML = '<option value="">선수 선택</option>';
+
+      names.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        selectEl.appendChild(option);
+      });
+
+      if (currentValue && names.includes(currentValue)) {
+        selectEl.value = currentValue;
+      }
+    }
+
+    async function openPlayerSelect(selectId) {
+      try {
+        const names = await loadPlayerNames();
+        const selectIds = [
+          "pair1Player1Select",
+          "pair1Player2Select",
+          "pair2Player1Select",
+          "pair2Player2Select"
+        ];
+
+        selectIds.forEach((id) => {
+          const selectEl = document.getElementById(id);
+          fillPlayerSelect(selectEl, names);
+        });
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
+
+      const select = document.getElementById(selectId);
+      select.classList.toggle("hidden");
+    }
+
+    function selectPlayer(selectEl, buttonId) {
+      const button = document.getElementById(buttonId);
+      if (selectEl.value) {
+        button.textContent = selectEl.value;
+      }
+      selectEl.classList.add("hidden");
+    }
+
+    document.getElementById("gameDate").addEventListener("input", function (e) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Score 조회</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f3f7f0;
+      font-family: "Segoe UI", sans-serif;
+      color: #1f3b2d;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+    }
+
+    .back-btn {
+      margin-bottom: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #1f3b2d;
+      color: #fff;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item {
+      display: block;
+      text-decoration: none;
+      background: #fff;
+      border: 1px solid #c7d4c8;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #1f3b2d;
+      font-weight: 600;
+    }
+
+    .item:hover {
+      background: #e7f2e9;
+    }
+
+    .msg {
+      background: #fff;
+      border: 1px solid #c7d4c8;
+      border-radius: 10px;
+      padding: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <button class="back-btn" type="button" onclick="location.href='index.html'">뒤로</button>
+    <h1>Score 파일 목록</h1>
+    <div id="content" class="msg">목록을 불러오는 중...</div>
+  </main>
+
+  <script>
+    async function loadCsvList() {
+      const content = document.getElementById("content");
+      try {
+        const response = await fetch("score_view/file_list.json", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error("CSV 목록 파일을 찾을 수 없습니다.");
+        }
+
+        const files = await response.json();
+        if (!Array.isArray(files) || files.length === 0) {
+          content.textContent = "표시할 CSV 파일이 없습니다.";
+          return;
+        }
+
+        const wrap = document.createElement("div");
+        wrap.className = "list";
+
+        files.forEach((file) => {
+          const link = document.createElement("a");
+          link.className = "item";
+          link.href = `score_table.html?file=${encodeURIComponent(file)}`;
+          link.textContent = file;
+          wrap.appendChild(link);
+        });
+
+        content.className = "list";
+        content.innerHTML = "";
+        content.appendChild(wrap);
+      } catch (error) {
+        content.textContent = `목록을 불러오지 못했습니다: ${error.message}`;
+      }
+    }
+
+    loadCsvList();
+  </script>
+</body>
+</html>
