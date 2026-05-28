@@ -1,0 +1,199 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>순위 확인</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f3f7f0;
+      font-family: "Segoe UI", sans-serif;
+      color: #1f3b2d;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .top {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      background: #1f3b2d;
+      color: #fff;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .msg {
+      background: #fff;
+      border: 1px solid #c7d4c8;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: #fff;
+      border: 1px solid #c7d4c8;
+      border-radius: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 900px;
+    }
+
+    th, td {
+      border: 1px solid #d6e0d7;
+      padding: 10px;
+      text-align: center;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    th {
+      background: #e7f2e9;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <div class="top">
+      <button class="btn" type="button" onclick="location.href='index.html'">뒤로</button>
+      <h1>순위 확인</h1>
+    </div>
+
+    <div class="msg">
+      최신 점수 반영은 터미널에서
+      <code>python update_rank_score.py --source score_view/파일명.csv --rank ranking/rank_score.csv</code>
+      실행 후 새로고침하세요.
+    </div>
+
+    <div id="content" class="msg">랭킹 데이터를 불러오는 중...</div>
+  </main>
+
+  <script>
+    function parseCsv(text) {
+      const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim().length > 0);
+      if (lines.length === 0) return { headers: [], rows: [] };
+
+      function parseLine(line) {
+        const result = [];
+        let cur = "";
+        let quoted = false;
+
+        for (let i = 0; i < line.length; i += 1) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (quoted && line[i + 1] === '"') {
+              cur += '"';
+              i += 1;
+            } else {
+              quoted = !quoted;
+            }
+          } else if (ch === ',' && !quoted) {
+            result.push(cur);
+            cur = "";
+          } else {
+            cur += ch;
+          }
+        }
+
+        result.push(cur);
+        return result;
+      }
+
+      const headers = parseLine(lines[0]);
+      const rows = lines.slice(1).map(parseLine);
+      return { headers, rows };
+    }
+
+    async function loadRanking() {
+      const content = document.getElementById("content");
+      const visibleHeaders = ["순위", "이름", "경기횟수", "평균점수", "갱신일자"];
+
+      try {
+        const response = await fetch("ranking/rank_score.csv", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error("rank_score.csv 파일을 찾을 수 없습니다.");
+        }
+
+        const text = await response.text();
+        const { headers, rows } = parseCsv(text);
+
+        if (headers.length === 0) {
+          content.textContent = "표시할 랭킹 데이터가 없습니다.";
+          return;
+        }
+
+        const wrap = document.createElement("div");
+        wrap.className = "table-wrap";
+
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const trHead = document.createElement("tr");
+
+        const visibleIndexes = visibleHeaders
+          .map((h) => headers.indexOf(h))
+          .filter((idx) => idx >= 0);
+
+        visibleHeaders.forEach((h) => {
+          const th = document.createElement("th");
+          th.textContent = h;
+          trHead.appendChild(th);
+        });
+
+        thead.appendChild(trHead);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+        rows.forEach((row) => {
+          const rankIdx = headers.indexOf("순위");
+          const rankValue = rankIdx >= 0 ? String(row[rankIdx] ?? "").trim() : "";
+          const rankNum = Number(rankValue);
+          if (!rankValue || Number.isNaN(rankNum) || rankNum < 1 || rankNum > 15) {
+            return;
+          }
+
+          const tr = document.createElement("tr");
+          visibleIndexes.forEach((idx) => {
+            const td = document.createElement("td");
+            td.textContent = row[idx] ?? "";
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        wrap.appendChild(table);
+
+        content.className = "";
+        content.innerHTML = "";
+        content.appendChild(wrap);
+      } catch (error) {
+        content.textContent = `랭킹 데이터를 불러오지 못했습니다: ${error.message}`;
+      }
+    }
+
+    loadRanking();
+  </script>
+</body>
+</html>
