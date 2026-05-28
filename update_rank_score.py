@@ -1,5 +1,4 @@
 ﻿import argparse
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -22,18 +21,18 @@ def to_number(value, default=0.0) -> float:
 
 
 def calc_points(result1: str, score_gap: float) -> dict[str, float]:
-    bonus = score_gap * 0.1
+    bonus = score_gap * 0.2
     result1 = str(result1).strip()
 
     if result1 == "승":
         return {"team1": 2.0 + bonus, "team2": 1.0}
     if result1 == "무":
-        return {"team1": 1.5, "team2": 1.5}
+        return {"team1": 1.4, "team2": 1.4}
     # 패(또는 기타값)는 team2 승리로 처리
     return {"team1": 1.0, "team2": 2.0 + bonus}
 
 
-def add_score(rank_df: pd.DataFrame, name: str, add_point: float, today: str) -> None:
+def add_score(rank_df: pd.DataFrame, name: str, add_point: float, match_date: str) -> None:
     name = str(name).strip()
     if not name:
         return
@@ -50,7 +49,7 @@ def add_score(rank_df: pd.DataFrame, name: str, add_point: float, today: str) ->
     rank_df.at[idx, "경기횟수"] = int(games)
     rank_df.at[idx, "합계점수"] = round(total, 3)
     rank_df.at[idx, "평균점수"] = round(avg, 3)
-    rank_df.at[idx, "갱신일자"] = today
+    rank_df.at[idx, "갱신일자"] = match_date
 
 
 def assign_rank(rank_df: pd.DataFrame) -> pd.DataFrame:
@@ -87,9 +86,8 @@ def main() -> None:
     rank_df = read_csv_with_fallback(rank_path)
     rank_df["갱신일자"] = rank_df["갱신일자"].astype("string")
 
-    today = datetime.now().strftime("%Y-%m-%d")
-
     for _, row in source_df.iterrows():
+        match_date = str(row.get("경기일자", "")).strip()
         name1 = str(row.get("성명1", "")).strip()
         name2 = str(row.get("성명2", "")).strip()
         name3 = str(row.get("성명3", "")).strip()
@@ -98,10 +96,10 @@ def main() -> None:
         score_gap = to_number(row.get("점수차", 0), default=0.0)
 
         points = calc_points(result1, score_gap)
-        add_score(rank_df, name1, points["team1"], today)
-        add_score(rank_df, name2, points["team1"], today)
-        add_score(rank_df, name3, points["team2"], today)
-        add_score(rank_df, name4, points["team2"], today)
+        add_score(rank_df, name1, points["team1"], match_date)
+        add_score(rank_df, name2, points["team1"], match_date)
+        add_score(rank_df, name3, points["team2"], match_date)
+        add_score(rank_df, name4, points["team2"], match_date)
 
     ranked_df = assign_rank(rank_df)
     ranked_df.to_csv(rank_path, index=False, encoding="utf-8-sig")
